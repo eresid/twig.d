@@ -1,0 +1,9 @@
+{
+	"name": "twig-d",
+	"authors": [
+		"Eugene Sakara"
+	],
+	"description": "The flexible, fast, and secure template engine for Vibe.d",
+	"copyright": "Copyright © 2017, Eugene Sakara",
+	"license": "MIT"
+}

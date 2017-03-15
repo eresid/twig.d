@@ -1,6 +1,7 @@
 # Compiled Object files
 *.o
 *.obj
+twig-d
 
 # Compiled Dynamic libraries
 *.so
@@ -19,6 +20,7 @@
 docs.json
 __dummy.html
 docs/
+__test__*__
 
 # Code coverage
 *.lst
