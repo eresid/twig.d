@@ -1,6 +1,10 @@
 module twigd.parser;
 
 import std.algorithm.searching : canFind;
+version(unittest) {
+    import std.string : strip;
+    import std.stdio;
+}
 
 import twigd.delimiter;
 
