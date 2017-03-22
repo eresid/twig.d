@@ -21,7 +21,7 @@ class Generator {
     }
 
     string toVariable() {
-        return mixin("writeln(\"Hello World!\");");
+        return null;//mixin("writeln(\"Hello World!\");");
     }
 }
 
