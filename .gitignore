@@ -2,6 +2,7 @@
 *.o
 *.obj
 twig-d
+twig-d-test-library
 
 # Compiled Dynamic libraries
 *.so
@@ -24,3 +25,6 @@ __test__*__
 
 # Code coverage
 *.lst
+
+# IDE
+.idea
