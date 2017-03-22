@@ -1,11 +1,30 @@
-[0.1]
+[0.0.1]
+- parser
+- comments support
 
+[0.0.2]
+- variables support
+
+[0.0.3]
+- vibe.d integration
+
+[0.0.4]
 - extends
 - block
-- raw
-- data: objects and values
-- route.openPage(item.id)|raw
-- for
+
+[0.0.5]
 - if/else
+
+[0.0.6]
+- for
+
+[0.0.7]
 - include
+
+[0.0.8]
+- cache
+
+[Backlog]
+- raw
+- route.openPage(item.id)|raw
 - verbatim
