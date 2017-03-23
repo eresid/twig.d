@@ -6,5 +6,5 @@ import vibe.templ.diet;
 void showHome(HTTPServerRequest req, HTTPServerResponse res)
 {
 	string username = "Tester Test";
-	res.render!("home.dt", req, username);
+	res.renderTemplate!("home.twig", req, username);
 }

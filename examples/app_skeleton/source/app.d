@@ -9,7 +9,7 @@ void main()
 {
 	auto router = new URLRouter;
 	router.get("/", &showHome);
-	router.get("/about", staticTemplate!"about.dt");
+	router.get("/about", staticTemplate!"about.twig");
 	router.get("*", serveStaticFiles("public"));
 
 	auto settings = new HTTPServerSettings;
@@ -25,5 +25,5 @@ void main()
 
 void showError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error)
 {
-	res.render!("error.dt", req, error);
+	res.renderTemplate!("error.twig", req, error);
 }

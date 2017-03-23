@@ -24,6 +24,9 @@
 [0.0.8]
 - cache
 
+[0.0.9]
+- set
+
 [Backlog]
 - raw
 - route.openPage(item.id)|raw

@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {% set title = 'HTTP error ' ~ error.code %}
+{% endblock %}
+
+{% block body %}
+    <p>An error has occured. We are really sorry about that!</p>
+    <p>Error description: {{ error.message }}</p>
+{% endblock %}
