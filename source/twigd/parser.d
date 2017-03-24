@@ -21,6 +21,10 @@ class Parser {
         this.generator = new Generator(Data());
     }
 
+    this(Data data) {
+        this.generator = new Generator(data);
+    }
+
     public string parse(string content) {
         tags.length = 0;
         ulong indexFrom = 0;
@@ -46,6 +50,9 @@ class Parser {
                     break;
                 }
                 case Delimiter.Type.VARIABLE: {
+                    content = content[0 .. tempTag.indexFrom]
+                            ~ generator.toVariable(tempTag.expression)
+                            ~ content[tempTag.indexTo .. content.length];
                     break;
                 }
                 case Delimiter.Type.BLOCK: {
@@ -117,7 +124,9 @@ unittest {
 }
 
 unittest {
-    Parser parser = new Parser;
+    Data data = Data();
+    data.title = "Awesome Title";
+    Parser parser = new Parser(data);
 
     string str = "<title>{{ title }}</title>";
     string result = parser.parse(str);

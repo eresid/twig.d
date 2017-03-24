@@ -21,6 +21,7 @@ class Generator {
     }
 
     string toVariable(string variable) {
+        // "writeln(data." ~ variable ~ ");";
         return null;//mixin("writeln(\"Hello World!\");");
     }
 }
