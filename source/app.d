@@ -1,6 +1,7 @@
 import std.stdio;
 
 import twigd.exceptions;
+import twigd.parser;
 
 void main()
 {
@@ -12,4 +13,7 @@ void main()
 
 	writeln(str.replace("ololo", "trololo"));
 	//throw new NotImplementedException("Something wrong");
+
+    Parser parser = new Parser;
+    string resultStr = parser.parse("Content");
 }

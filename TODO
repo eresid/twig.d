@@ -1,9 +1,10 @@
 [0.0.1]
-- parser
-- comments support
++ parser
++ comments support
++ variables support
 
 [0.0.2]
-- variables support
+- vibe.d static example
 
 [0.0.3]
 - vibe.d integration

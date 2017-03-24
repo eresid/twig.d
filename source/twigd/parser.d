@@ -7,29 +7,43 @@ version(unittest) {
 }
 
 import twigd.delimiter;
+import twigd.exceptions;
 
 class Parser {
 
-    private immutable string[] OPEN_DELIMITERS = [Delimiter.COMMENT_START, Delimiter.VARIABLE_START, Delimiter.BLOCK_START];
+    Tag[] tags;
 
-    struct Tag {
-        Delimiter.Type type;
-        string expression;
-        string bodyStr;
-        Tag[] tags;
+    public string parse(string content) {
+        tags.length = 0;
+        ulong indexFrom = 0;
+
+        Tag currentTag = null;
+
+        do {
+            currentTag = toTag(content, indexFrom, content.length);
+            if (currentTag !is null) {
+                tags ~= currentTag;
+                indexFrom = currentTag.indexTo;
+            }
+        } while (currentTag !is null);
+
+
+        // TODO
+        return null;
     }
 
-    Tag strToTree(string content, int s, int t) {
-        Tag tag;
-        bool findVar = false;
-        bool findExe = false;
-        int ves,vet;
-        static import std.algorithm;
-        for(int i = s; i<t; i++) {
+    Tag toTag(ref string content, ulong indexFrom, ulong indexTo) {
+        Tag tag = new Tag;
+
+        for(ulong i = indexFrom; i < indexTo; i++) {
+            if (i+2 >= indexTo) {
+                return null;
+            }
+
             string word = content[i .. i+2];
 
-            if (canFind(OPEN_DELIMITERS, word)) {
-                ves = i;
+            if (canFind(Delimiter.OPEN_DELIMITERS, word)) {
+                tag.indexFrom = i;
 
                 if (word == Delimiter.COMMENT_START) {
                     tag.type = Delimiter.Type.COMMENT;
@@ -38,12 +52,14 @@ class Parser {
                 } else if (word == Delimiter.BLOCK_START) {
                     tag.type = Delimiter.Type.BLOCK;
                 }
-                else findExe = true;
-                for(int k = i;k<t;k++)
-                {
-                    if(canFind(["}}","%}"],content[k..k+2]))
-                    {
-                        vet = k+2;
+
+                if (tag.type == Delimiter.Type.BLOCK) {
+                    throw new NotImplementedException("Blocks {% %} are not supported");
+                }
+
+                for(ulong j = i; j < indexTo; j++) {
+                    if (canFind(Delimiter.CLOSE_DELIMITERS, content[j .. j+2])) {
+                        tag.indexTo = j+2;
                         break;
                     }
                 }
@@ -51,17 +67,75 @@ class Parser {
             }
         }
 
-        //if(ves==0 && !findVar && !findExe)return new Constant(content[s..t]);
-        //if(findVar && ves==s)return new VariableReference(content[ves+2 .. vet-2]);
-        //if(findExe && ves==s)return new ExecuteBlock(content[ves+2 .. vet-2]);
-        //if(content[ves .. ves+2] == "{%")
-        //    return new Operation(strToTree(content,s,ves),new ExecuteBlock(content[ves+2 .. vet-2]),strToTree(content,vet,t));
-        //else
-        //   return new Operation(strToTree(content,s,ves),new VariableReference(content[ves+2 .. vet-2]),strToTree(content,vet,t));
+        tag.expression = strip(content[tag.indexFrom+2 .. tag.indexTo-2]);
+
         return tag;
     }
 }
 
+ class Tag {
+    Delimiter.Type type;
+    string expression;
+    string bodyStr;
+
+    ulong indexFrom;
+    ulong indexTo;
+    Tag[] tags;
+}
+
 unittest {
-    assert(strip("     hello world     ") == "hello world");
+    Parser parser = new Parser;
+
+    string str = "<html><header><title>This is title</title></header><body>Hello world</body></html>";
+    string result = parser.parse(str);
+    assert(parser.tags.length == 0);
+}
+
+unittest {
+    Parser parser = new Parser;
+
+    string str = "<title>{{ title }}</title>";
+    string result = parser.parse(str);
+    assert(parser.tags.length == 1);
+
+    Tag tag = parser.tags[0];
+    assert(tag.type == Delimiter.Type.VARIABLE);
+    assert(tag.expression == "title");
+    assert(tag.indexFrom == 7);
+    assert(tag.indexTo == 18);
+}
+
+unittest {
+    Parser parser = new Parser;
+
+    string str = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\">
+    <title>{{title}}</title></head><body><h1>Hello world</h1><p>And hello {# name #}</p></body></html>";
+    string result = parser.parse(str);
+    assert(parser.tags.length == 2);
+
+     Tag tag1 = parser.tags[0];
+     assert(tag1.type == Delimiter.Type.VARIABLE);
+     assert(tag1.expression == "title");
+     assert(tag1.indexFrom == 106);
+     assert(tag1.indexTo == 115);
+
+     Tag tag2 = parser.tags[1];
+     assert(tag2.type == Delimiter.Type.COMMENT);
+     assert(tag2.expression == "name");
+     assert(tag2.indexFrom == 169);
+     assert(tag2.indexTo == 179);
+}
+
+unittest {
+    Parser parser = new Parser;
+
+    string str = "<title>{# some comment #}</title>";
+    string result = parser.parse(str);
+    assert(parser.tags.length == 1);
+
+    Tag tag = parser.tags[0];
+    assert(tag.type == Delimiter.Type.COMMENT);
+    assert(tag.expression == "some comment");
+    assert(tag.indexFrom == 7);
+    assert(tag.indexTo == 25);
 }
