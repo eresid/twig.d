@@ -247,7 +247,7 @@ unittest {
     string bodyStr = "<p>Our website is in maintenance mode. Please, come back later.</p>";
 
     string ifexpression = tags.ifTag("if online == false", bodyStr);
-    writeln(ifexpression);
+    //writeln(ifexpression);
 
 }
 

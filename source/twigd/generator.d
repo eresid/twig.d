@@ -16,11 +16,11 @@ class Generator {
         this.data = data;
     }
 
-    string toComment(string bodyStr) {
-        return "<!-- " ~ bodyStr ~ " -->";
+    string toComment(string comment) {
+        return "<!-- " ~ comment ~ " -->";
     }
 
-    string toVariable() {
+    string toVariable(string variable) {
         return null;//mixin("writeln(\"Hello World!\");");
     }
 }

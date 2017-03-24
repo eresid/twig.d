@@ -1,17 +1,25 @@
 module twigd.parser;
 
 import std.algorithm.searching : canFind;
+import std.array : replaceSlice;
 version(unittest) {
     import std.string : strip;
     import std.stdio;
 }
 
+import twigd.data;
 import twigd.delimiter;
 import twigd.exceptions;
+import twigd.generator;
 
 class Parser {
 
+    private Generator generator;
     Tag[] tags;
+
+    this() {
+        this.generator = new Generator(Data());
+    }
 
     public string parse(string content) {
         tags.length = 0;
@@ -27,9 +35,26 @@ class Parser {
             }
         } while (currentTag !is null);
 
+        for (int i=0; i<tags.length; i++) {
+            Tag tempTag = tags[i];
 
-        // TODO
-        return null;
+            final switch(tempTag.type) {
+                case Delimiter.Type.COMMENT: {
+                    content = content[0 .. tempTag.indexFrom]
+                            ~ generator.toComment(tempTag.expression)
+                            ~ content[tempTag.indexTo .. content.length];
+                    break;
+                }
+                case Delimiter.Type.VARIABLE: {
+                    break;
+                }
+                case Delimiter.Type.BLOCK: {
+                    break;
+                }
+            }
+        }
+
+        return content;
     }
 
     Tag toTag(ref string content, ulong indexFrom, ulong indexTo) {
@@ -73,7 +98,7 @@ class Parser {
     }
 }
 
- class Tag {
+class Tag {
     Delimiter.Type type;
     string expression;
     string bodyStr;
@@ -131,6 +156,7 @@ unittest {
 
     string str = "<title>{# some comment #}</title>";
     string result = parser.parse(str);
+    assert(result == "<title><!-- some comment --></title>");
     assert(parser.tags.length == 1);
 
     Tag tag = parser.tags[0];

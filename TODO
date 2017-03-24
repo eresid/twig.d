@@ -1,31 +1,29 @@
 [0.0.1]
 + parser
 + comments support
-+ variables support
+- variables support
 
 [0.0.2]
+- vibe.d integration
 - vibe.d static example
 
 [0.0.3]
-- vibe.d integration
-
-[0.0.4]
 - extends
 - block
 
-[0.0.5]
+[0.0.4]
 - if/else
 
-[0.0.6]
+[0.0.5]
 - for
 
-[0.0.7]
+[0.0.6]
 - include
 
-[0.0.8]
+[0.0.7]
 - cache
 
-[0.0.9]
+[0.0.8]
 - set
 
 [Backlog]
