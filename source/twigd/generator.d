@@ -1,16 +1,21 @@
 module twigd.generator;
 
 import std.conv : to;
-
-import twigd.data;
-
+import std.meta;
+import std.traits;
+import std.typecons;
 version(unittest) {
     import std.stdio;
 }
 
+import twigd.data;
+
 class Generator {
 
     private Data data;
+
+    private alias allMembers(T...) = Identity!(__traits(allMembers, T));
+    private alias getMember(T...) = Identity!(__traits(getMember, T));
 
     this(Data data) {
         this.data = data;
@@ -21,8 +26,13 @@ class Generator {
     }
 
     string toVariable(string variable) {
-        // "writeln(data." ~ variable ~ ");";
-        return null;//mixin("writeln(\"Hello World!\");");
+        foreach(n; allMembers!data) {
+            if (n == variable) {
+                return getMember!(data, variable);
+            }
+        }
+
+        return "";
     }
 }
 

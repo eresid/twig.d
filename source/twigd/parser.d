@@ -2,8 +2,8 @@ module twigd.parser;
 
 import std.algorithm.searching : canFind;
 import std.array : replaceSlice;
+import std.string : strip;
 version(unittest) {
-    import std.string : strip;
     import std.stdio;
 }
 
