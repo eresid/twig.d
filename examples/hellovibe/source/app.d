@@ -21,6 +21,15 @@ void main()
 	runApplication();
 }
 
+void doRequest(HTTPServerRequest req, HTTPServerResponse res) {
+
+	// Client requested with query string `?name=foo`
+	req.renderTemple!(`
+		Hello, world!
+		And hello, <%= var.name %>!
+	`)(res);
+}
+
 void showError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error)
 {
 	res.renderTemplate!("error.html", req, error);
