@@ -16,13 +16,9 @@ class Parser {
 
     private Generator generator;
     private Element[] elements;
-    private string templateStr = q{
-        string %s(Data data) {
-            string str = %s;
-
-            return str;
-        }
-    };
+    template GenMethod(string funcName, string funcBody) {
+        const char[] GenMethod = "private string " ~ funcName ~ "(Data data) { return " ~ funcBody ~ "; }";
+    }
 
     this() {
         this.generator = new Generator(Data());
