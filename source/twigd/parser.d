@@ -15,7 +15,14 @@ import twigd.generator;
 class Parser {
 
     private Generator generator;
-    private Tag[] tags;
+    private Element[] elements;
+    private string templateStr = q{
+        string %s(Data data) {
+            string str = %s;
+
+            return str;
+        }
+    };
 
     this() {
         this.generator = new Generator(Data());
@@ -26,35 +33,35 @@ class Parser {
     }
 
     string parse(string content) {
-        tags.length = 0;
+        elements.length = 0;
         ulong indexFrom = 0;
 
-        Tag currentTag = null;
+        Element currentElement = null;
 
-        // find all tags on top level
+        // find all elements on top level
         do {
-            currentTag = toTag(content, indexFrom, content.length);
-            if (currentTag !is null) {
-                tags ~= currentTag;
-                indexFrom = currentTag.indexTo;
+            currentElement = toElement(content, indexFrom, content.length);
+            if (currentElement !is null) {
+                elements ~= currentElement;
+                indexFrom = currentElement.indexTo;
             }
-        } while (currentTag !is null);
+        } while (currentElement !is null);
 
-        // change tags to content
-        for (int i=0; i<tags.length; i++) {
-            Tag tempTag = tags[i];
+        // change elements to output text
+        for (int i=0; i<elements.length; i++) {
+            Element tempElement = elements[i];
 
-            final switch(tempTag.type) {
+            final switch(tempElement.type) {
                 case Delimiter.Type.COMMENT: {
-                    content = content[0 .. tempTag.indexFrom]
-                            ~ generator.toComment(tempTag.expression)
-                            ~ content[tempTag.indexTo .. content.length];
+                    content = content[0 .. tempElement.indexFrom]
+                            ~ generator.toComment(tempElement.expression)
+                            ~ content[tempElement.indexTo .. content.length];
                     break;
                 }
                 case Delimiter.Type.VARIABLE: {
-                    content = content[0 .. tempTag.indexFrom]
-                            ~ generator.toVariable(tempTag.expression)
-                            ~ content[tempTag.indexTo .. content.length];
+                    content = content[0 .. tempElement.indexFrom]
+                            ~ generator.toVariable(tempElement.expression)
+                            ~ content[tempElement.indexTo .. content.length];
                     break;
                 }
                 case Delimiter.Type.BLOCK: {
@@ -66,8 +73,85 @@ class Parser {
         return content;
     }
 
-    private Tag toTag(ref string content, ulong indexFrom, ulong indexTo) {
-        Tag tag = null;
+    string parse2(string content) {
+        string result = "";
+
+        elements.length = 0;
+        ulong indexFrom = 0;
+
+        Element nextElement;
+        do {
+            nextElement = findNextElement(content, indexFrom);
+
+            if (nextElement is null) {
+                result ~= toPrint(content[indexFrom .. content.length]);
+            } else {
+                result ~= toPrint(content[indexFrom .. nextElement.indexFrom]);
+
+                if (nextElement.type == Delimiter.Type.COMMENT) {
+                    result ~=  generator.toComment(nextElement.expression);
+                } else if (nextElement.type == Delimiter.Type.VARIABLE) {
+                    result ~=  generator.toVariable(nextElement.expression);
+                } else {
+                    throw new NotImplementedException("Blocks {% %} are not supported");
+                }
+
+                indexFrom = nextElement.indexTo;
+            }
+
+        } while (nextElement !is null);
+
+        return result;
+    }
+
+    private string toPrint(const string content) {
+        return "str ~= \"" ~ content ~ "\"\n";
+    }
+
+    private Element findNextElement(const ref string content, ulong indexFrom) {
+        Element element = null;
+
+        for(ulong i = indexFrom; i < content.length; i++) {
+            if (i+2 >= content.length) {
+                return null;
+            }
+
+            string word = content[i .. i+2];
+
+            if (canFind(Delimiter.OPEN_DELIMITERS, word)) {
+                element = new Element;
+
+                element.indexFrom = i;
+
+                if (word == Delimiter.COMMENT_START) {
+                    element.type = Delimiter.Type.COMMENT;
+                } else if (word == Delimiter.VARIABLE_START) {
+                    element.type = Delimiter.Type.VARIABLE;
+                } else if (word == Delimiter.BLOCK_START) {
+                    element.type = Delimiter.Type.BLOCK;
+                }
+
+                if (element.type == Delimiter.Type.BLOCK) {
+                    throw new NotImplementedException("Blocks {% %} are not supported");
+                }
+
+                for(ulong j = i; j < content.length; j++) {
+                    if (canFind(Delimiter.CLOSE_DELIMITERS, content[j .. j+2])) {
+                        element.indexTo = j+2;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        element.expression = strip(content[element.indexFrom+2 .. element.indexTo-2]);
+
+        return element;
+    }
+
+    private Element toElement(ref string content, ulong indexFrom, ulong indexTo) {
+        Element element = null;
 
         for(ulong i = indexFrom; i < indexTo; i++) {
             if (i+2 >= indexTo) {
@@ -77,25 +161,25 @@ class Parser {
             string word = content[i .. i+2];
 
             if (canFind(Delimiter.OPEN_DELIMITERS, word)) {
-                tag = new Tag;
+                element = new Element;
 
-                tag.indexFrom = i;
+                element.indexFrom = i;
 
                 if (word == Delimiter.COMMENT_START) {
-                    tag.type = Delimiter.Type.COMMENT;
+                    element.type = Delimiter.Type.COMMENT;
                 } else if (word == Delimiter.VARIABLE_START) {
-                    tag.type = Delimiter.Type.VARIABLE;
+                    element.type = Delimiter.Type.VARIABLE;
                 } else if (word == Delimiter.BLOCK_START) {
-                    tag.type = Delimiter.Type.BLOCK;
+                    element.type = Delimiter.Type.BLOCK;
                 }
 
-                if (tag.type == Delimiter.Type.BLOCK) {
+                if (element.type == Delimiter.Type.BLOCK) {
                     throw new NotImplementedException("Blocks {% %} are not supported");
                 }
 
                 for(ulong j = i; j < indexTo; j++) {
                     if (canFind(Delimiter.CLOSE_DELIMITERS, content[j .. j+2])) {
-                        tag.indexTo = j+2;
+                        element.indexTo = j+2;
                         break;
                     }
                 }
@@ -103,28 +187,39 @@ class Parser {
             }
         }
 
-        tag.expression = strip(content[tag.indexFrom+2 .. tag.indexTo-2]);
+        element.expression = strip(content[element.indexFrom+2 .. element.indexTo-2]);
 
-        return tag;
+        return element;
     }
 }
 
-class Tag {
+class Element {
     Delimiter.Type type;
     string expression;
     string bodyStr;
 
     ulong indexFrom;
     ulong indexTo;
-    Tag[] tags;
+    Element[] elements;
 }
 
 unittest {
     Parser parser = new Parser;
 
+    string str = "<html><header><title>This is title</title></header><body></body></html>";
+    //string str = "<html><header><title>This is title</title></header><body>Hello world{% if bodyclass %} {{ bodyclass }} {% endif %}</body></html>";
+    string res1 = parser.parse2(str);
+    writeln(res1);
+    assert(parser.elements.length == 0);
+}
+
+/+
+unittest {
+    Parser parser = new Parser;
+
     string str = "<html><header><title>This is title</title></header><body>Hello world</body></html>";
     string result = parser.parse(str);
-    assert(parser.tags.length == 0);
+    assert(parser.elements.length == 0);
 }
 
 unittest {
@@ -135,13 +230,13 @@ unittest {
     string str = "<title>{{ title }}</title>";
     string result = parser.parse(str);
     writeln("RESULT ", result);
-    assert(parser.tags.length == 1);
+    assert(parser.elements.length == 1);
 
-    Tag tag = parser.tags[0];
-    assert(tag.type == Delimiter.Type.VARIABLE);
-    assert(tag.expression == "title");
-    assert(tag.indexFrom == 7);
-    assert(tag.indexTo == 18);
+    Element element = parser.elements[0];
+    assert(element.type == Delimiter.Type.VARIABLE);
+    assert(element.expression == "title");
+    assert(element.indexFrom == 7);
+    assert(element.indexTo == 18);
 }
 
 unittest {
@@ -150,19 +245,19 @@ unittest {
     string str = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\">
     <title>{{title}}</title></head><body><h1>Hello world</h1><p>And hello {# name #}</p></body></html>";
     string result = parser.parse(str);
-    assert(parser.tags.length == 2);
+    assert(parser.elements.length == 2);
 
-     Tag tag1 = parser.tags[0];
-     assert(tag1.type == Delimiter.Type.VARIABLE);
-     assert(tag1.expression == "title");
-     assert(tag1.indexFrom == 106);
-     assert(tag1.indexTo == 115);
+     Element element1 = parser.elements[0];
+     assert(element1.type == Delimiter.Type.VARIABLE);
+     assert(element1.expression == "title");
+     assert(element1.indexFrom == 106);
+     assert(element1.indexTo == 115);
 
-     Tag tag2 = parser.tags[1];
-     assert(tag2.type == Delimiter.Type.COMMENT);
-     assert(tag2.expression == "name");
-     assert(tag2.indexFrom == 169);
-     assert(tag2.indexTo == 179);
+     Element element2 = parser.elements[1];
+     assert(element2.type == Delimiter.Type.COMMENT);
+     assert(element2.expression == "name");
+     assert(element2.indexFrom == 169);
+     assert(element2.indexTo == 179);
 }
 
 unittest {
@@ -171,11 +266,11 @@ unittest {
     string str = "<title>{# some comment #}</title>";
     string result = parser.parse(str);
     assert(result == "<title><!-- some comment --></title>");
-    assert(parser.tags.length == 1);
+    assert(parser.elements.length == 1);
 
-    Tag tag = parser.tags[0];
-    assert(tag.type == Delimiter.Type.COMMENT);
-    assert(tag.expression == "some comment");
-    assert(tag.indexFrom == 7);
-    assert(tag.indexTo == 25);
-}
+    Element element = parser.elements[0];
+    assert(element.type == Delimiter.Type.COMMENT);
+    assert(element.expression == "some comment");
+    assert(element.indexFrom == 7);
+    assert(element.indexTo == 25);
+}+/

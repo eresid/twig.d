@@ -1,5 +1,7 @@
 import std.stdio;
+import std.conv : to;
 
+import twigd.data;
 import twigd.exceptions;
 import twigd.parser;
 
@@ -17,7 +19,11 @@ void main()
     //Parser parser = new Parser;
     //string resultStr = parser.parse("Content");
 
-    testImport();
+    //testImport();
+
+    Data data = Data();
+    data.title = "Awesome Twig.d";
+    write(tempMethod(data));
 }
 
 private void testImport() {
@@ -26,4 +32,14 @@ private void testImport() {
     mixin(val);
 
     writeln(msg);
+}
+
+private string tempMethod(Data data) {
+    string str = "";
+    str ~= "<html><header><title>";
+    str ~= to!string(data.title);
+    str ~= "</title></header><body></body></html>";
+
+    str ~= "\n";
+    return str;
 }

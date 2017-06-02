@@ -19,20 +19,22 @@ class Generator {
     }
 
     string toComment(string comment) {
-        return "<!-- " ~ comment ~ " -->";
+        string commentName = "comment" ~ to!string(comment.hashOf());
+
+        string result = "string " ~ commentName ~ " = \"" ~ comment ~ "\";\n";
+        return result ~ "str ~= \"<!-- \" ~ " ~ commentName ~ " ~ \" -->\";\n";
     }
 
     string toVariable(string variable) {
-        return null;
-        //return mixin (print(variable));// data[variable];
+        return "str ~= to!string(data." ~ variable ~ ");\n";
     }
 }
 
-private string print(string value) {
-   return `writeln("data.` ~ value ~ `");`;
-}
-
 unittest {
+    Data data = Data();
+    data.title = "Awesome Twig.d";
+    auto generator = new Generator(data);
 
-
+    write(generator.toComment("some comment"));
+    write(generator.toVariable("title"));
 }
