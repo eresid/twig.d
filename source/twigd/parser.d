@@ -15,7 +15,7 @@ import twigd.generator;
 class Parser {
 
     private Generator generator;
-    Tag[] tags;
+    private Tag[] tags;
 
     this() {
         this.generator = new Generator(Data());
@@ -25,12 +25,13 @@ class Parser {
         this.generator = new Generator(data);
     }
 
-    public string parse(string content) {
+    string parse(string content) {
         tags.length = 0;
         ulong indexFrom = 0;
 
         Tag currentTag = null;
 
+        // find all tags on top level
         do {
             currentTag = toTag(content, indexFrom, content.length);
             if (currentTag !is null) {
@@ -39,6 +40,7 @@ class Parser {
             }
         } while (currentTag !is null);
 
+        // change tags to content
         for (int i=0; i<tags.length; i++) {
             Tag tempTag = tags[i];
 
@@ -64,8 +66,8 @@ class Parser {
         return content;
     }
 
-    Tag toTag(ref string content, ulong indexFrom, ulong indexTo) {
-        Tag tag = new Tag;
+    private Tag toTag(ref string content, ulong indexFrom, ulong indexTo) {
+        Tag tag = null;
 
         for(ulong i = indexFrom; i < indexTo; i++) {
             if (i+2 >= indexTo) {
@@ -75,6 +77,8 @@ class Parser {
             string word = content[i .. i+2];
 
             if (canFind(Delimiter.OPEN_DELIMITERS, word)) {
+                tag = new Tag;
+
                 tag.indexFrom = i;
 
                 if (word == Delimiter.COMMENT_START) {
