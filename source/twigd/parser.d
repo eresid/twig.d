@@ -130,6 +130,7 @@ unittest {
 
     string str = "<title>{{ title }}</title>";
     string result = parser.parse(str);
+    writeln("RESULT ", result);
     assert(parser.tags.length == 1);
 
     Tag tag = parser.tags[0];

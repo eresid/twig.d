@@ -14,6 +14,16 @@ void main()
 	writeln(str.replace("ololo", "trololo"));
 	//throw new NotImplementedException("Something wrong");
 
-    Parser parser = new Parser;
-    string resultStr = parser.parse("Content");
+    //Parser parser = new Parser;
+    //string resultStr = parser.parse("Content");
+
+    testImport();
+}
+
+private void testImport() {
+    enum string val = import("testfile.txt");
+    writeln(val);
+    mixin(val);
+
+    writeln(msg);
 }

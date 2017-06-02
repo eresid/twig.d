@@ -21,7 +21,7 @@
 - include
 
 [0.0.7]
-- cache
+- cache (no, check, once)
 
 [0.0.8]
 - set
