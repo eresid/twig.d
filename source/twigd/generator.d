@@ -9,15 +9,7 @@ version(unittest) {
 }
 import std.array : appender;
 
-import twigd.data;
-
 class Generator {
-
-    private Data data;
-
-    this(Data data) {
-        this.data = data;
-    }
 
     string toComment(string comment) {
         auto result = appender!string();
@@ -43,10 +35,10 @@ class Generator {
 }
 
 unittest {
-    Data data = Data();
-    data.title = "Awesome Twig.d";
-    auto generator = new Generator(data);
+    auto generator = new Generator();
 
-    write(generator.toComment("some comment"));
-    write(generator.toVariable("title"));
+    string commentResult = "string comment2390961865 = \"some comment\";\nstr.put(\"<!-- \");\nstr.put(commentName);\nstr.put(\" -->\");\n";
+    assert(generator.toComment("some comment") == commentResult);
+
+    assert(generator.toVariable("title") == "str.put(to!string(data.title));\n");
 }

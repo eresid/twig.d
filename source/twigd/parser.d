@@ -7,7 +7,6 @@ version(unittest) {
     import std.stdio;
 }
 
-import twigd.data;
 import twigd.delimiter;
 import twigd.exceptions;
 import twigd.generator;
@@ -21,11 +20,7 @@ class Parser {
     }
 
     this() {
-        this.generator = new Generator(Data());
-    }
-
-    this(Data data) {
-        this.generator = new Generator(data);
+        this.generator = new Generator();
     }
 
     string parse(string content) {
@@ -202,8 +197,8 @@ class Element {
 unittest {
     Parser parser = new Parser;
 
-    Data data = Data();
-    data.title = "Awesome Title";
+    //Data data = Data();
+    //data.title = "Awesome Title";
 
     string str = "<html><header><title>{{ title }}</title></header><body></body></html>";
     string res1 = parser.parse2(str);
