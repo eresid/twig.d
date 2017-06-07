@@ -11,24 +11,11 @@ import twigd.delimiter;
 import twigd.exceptions;
 import twigd.generator;
 
-class Parser {
+struct Parser {
 
-    private Generator generator;
-    private Element[] elements;
-    template GenMethod(string funcName, string funcBody) {
-        const char[] GenMethod = "private string " ~ funcName ~ "(Data data) { return " ~ funcBody ~ "; }";
-    }
-
-    this() {
-        this.generator = new Generator();
-    }
-
-    string parse(string content, ulong indexFrom = 0) {
+    static string parse(string content, ulong indexFrom = 0) {
+        Generator generator;
         string result = "";
-
-        if (indexFrom == 0) {
-            elements.length = 0; // clear array
-        }
 
         Element nextElement;
         do {
@@ -37,8 +24,6 @@ class Parser {
             if (nextElement is null) {
                 result ~= generator.toString(content[indexFrom .. content.length]);
             } else {
-                elements ~= nextElement;
-
                 result ~= generator.toString(content[indexFrom .. nextElement.indexFrom]);
 
                 if (nextElement.type == Delimiter.Type.COMMENT) {
@@ -57,7 +42,7 @@ class Parser {
         return result;
     }
 
-    private Element findNextElement(const ref string content, ulong indexFrom) {
+    private static Element findNextElement(const ref string content, ulong indexFrom) {
         Element element = null;
 
         for(ulong i = indexFrom; i < content.length; i++) {
@@ -110,76 +95,58 @@ class Element {
     Element[] elements;
 }
 
-unittest {
-    Parser parser = new Parser;
+template GenMethod(string funcName, string funcBody) {
+    const char[] GenMethod = "string " ~ funcName ~ "(Data data) {\n"
+        ~ "import std.array : appender;\n"
+        ~ "import std.conv : to;\n"
+        ~ "auto str = appender!string();\n"
+        ~ funcBody
+        ~ "return str.data;\n" ~
+    "}";
+}
 
+unittest {
     // Test zero elements
-    string example1 = "<html><header><title></title></header><body></body></html>";
-    string result1 = "str.put(\"<html><header><title></title></header><body></body></html>\"));\n";
-    assert(parser.parse(example1) == result1);
-    assert(parser.elements.length == 0);
+    string source1 = "<html><header><title></title></header><body></body></html>";
+    string result1 = "str.put(\"<html><header><title></title></header><body></body></html>\");\n";
+    assert(Parser.parse(source1) == result1);
 
     // Test one variable
-    string example2 = "<html><header><title>{{ title }}</title></header><body></body></html>";
-    string result2 = "str.put(\"<html><header><title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body></body></html>\"));\n";
-    assert(parser.parse(example2) == result2);
-    assert(parser.elements.length == 1);
+    string source2 = "<html><header><title>{{ title }}</title></header><body></body></html>";
+    string result2 = "str.put(\"<html><header><title>\");\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body></body></html>\");\n";
+    assert(Parser.parse(source2) == result2);
 
     // Test two variables
-    string example3 = "<html><header><title>{{ title }}</title></header><body>{{ bodyText }}</body></html>";
-    string result3 = "str.put(\"<html><header><title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body>\"));\nstr.put(to!string(data.bodyText));\nstr.put(\"</body></html>\"));\n";
-    assert(parser.parse(example3) == result3);
-    assert(parser.elements.length == 2);
+    string source3 = "<html><header><title>{{ title }}</title></header><body>{{ bodyText }}</body></html>";
+    string result3 = "str.put(\"<html><header><title>\");\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body>\");\nstr.put(to!string(data.bodyText));\nstr.put(\"</body></html>\");\n";
+    assert(Parser.parse(source3) == result3);
 }
 
 unittest {
-    Parser parser = new Parser();
+    import twigd.data;
 
+    enum string html = "<html><header><title>{{ title }}</title></header><body></body></html>";
+    enum string source = Parser.parse(html);
+    mixin(GenMethod!("test", source));
+
+    Data data = Data();
+    data.title = "Awesome Title";
+    string result1 = "<html><header><title>Awesome Title</title></header><body></body></html>";
+    assert(test(data) == result1);
+    data.title = "Another Title";
+    string result2 = "<html><header><title>Another Title</title></header><body></body></html>";
+    assert(test(data) == result2);
+}
+
+unittest {
     string str = "<title>{{ title }}</title>";
-    string result = "str.put(\"<title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title>\"));\n";
+    string result = "str.put(\"<title>\");\nstr.put(to!string(data.title));\nstr.put(\"</title>\");\n";
 
-    assert(parser.parse(str) == result);
-    assert(parser.elements.length == 1);
-
-    Element element = parser.elements[0];
-    assert(element.type == Delimiter.Type.VARIABLE);
-    assert(element.expression == "title");
-    assert(element.indexFrom == 7);
-    assert(element.indexTo == 18);
+    assert(Parser.parse(str) == result);
 }
 
 unittest {
-    Parser parser = new Parser;
-
-    string str = "<!DOCTYPE html><html><head><meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\">
-    <title>{{title}}</title></head><body><h1>Hello world</h1><p>And hello {# name #}</p></body></html>";
-    string result = parser.parse(str);
-    assert(parser.elements.length == 2);
-
-     Element element1 = parser.elements[0];
-     assert(element1.type == Delimiter.Type.VARIABLE);
-     assert(element1.expression == "title");
-     assert(element1.indexFrom == 106);
-     assert(element1.indexTo == 115);
-
-     Element element2 = parser.elements[1];
-     assert(element2.type == Delimiter.Type.COMMENT);
-     assert(element2.expression == "name");
-     assert(element2.indexFrom == 169);
-     assert(element2.indexTo == 179);
-}
-
-unittest {
-    Parser parser = new Parser;
-
     string str = "<title>{# some comment #}</title>";
-    string result = parser.parse(str);
-    assert(result == "str.put(\"<title>\"));\nstr.put(\"<!-- some comment -->\");\nstr.put(\"</title>\"));\n");
-    assert(parser.elements.length == 1);
-
-    Element element = parser.elements[0];
-    assert(element.type == Delimiter.Type.COMMENT);
-    assert(element.expression == "some comment");
-    assert(element.indexFrom == 7);
-    assert(element.indexTo == 25);
+    string result = Parser.parse(str);
+    assert(result == "str.put(\"<title>\");\nstr.put(\"<!-- some comment -->\");\nstr.put(\"</title>\");\n");
 }

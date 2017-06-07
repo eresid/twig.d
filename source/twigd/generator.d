@@ -7,12 +7,11 @@ import std.typecons;
 version(unittest) {
     import std.stdio;
 }
-import std.array : appender;
 
-class Generator {
+struct Generator {
 
     string toString(string value) {
-         return "str.put(\"" ~ value ~ "\"));\n";
+         return "str.put(\"" ~ value ~ "\");\n";
     }
 
     string toComment(string comment) {
@@ -33,6 +32,6 @@ unittest {
     assert(generator.toVariable("title") == "str.put(to!string(data.title));\n");
 
     string templateStr = "<!DOCTYPE html><html><body><h1>Hello twig.d!</h1></body></html>";
-    string templateResult = "str.put(\"<!DOCTYPE html><html><body><h1>Hello twig.d!</h1></body></html>\"));\n";
+    string templateResult = "str.put(\"<!DOCTYPE html><html><body><h1>Hello twig.d!</h1></body></html>\");\n";
     assert(generator.toString(templateStr) == templateResult);
 }
