@@ -7,6 +7,7 @@ import std.typecons;
 version(unittest) {
     import std.stdio;
 }
+import std.array : appender;
 
 import twigd.data;
 
@@ -19,14 +20,25 @@ class Generator {
     }
 
     string toComment(string comment) {
+        auto result = appender!string();
+
         string commentName = "comment" ~ to!string(comment.hashOf());
 
-        string result = "string " ~ commentName ~ " = \"" ~ comment ~ "\";\n";
-        return result ~ "str ~= \"<!-- \" ~ " ~ commentName ~ " ~ \" -->\";\n";
+        result.put("string ");
+        result.put(commentName);
+        result.put(" = \"");
+        result.put(comment);
+        result.put("\";\n");
+
+        result.put("str.put(\"<!-- \");\n");
+        result.put("str.put(commentName);\n");
+        result.put("str.put(\" -->\");\n");
+
+        return result.data;
     }
 
     string toVariable(string variable) {
-        return "str ~= to!string(data." ~ variable ~ ");\n";
+        return "str.put(to!string(data." ~ variable ~ "));\n";
     }
 }
 

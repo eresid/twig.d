@@ -202,10 +202,12 @@ class Element {
 unittest {
     Parser parser = new Parser;
 
-    string str = "<html><header><title>This is title</title></header><body></body></html>";
-    //string str = "<html><header><title>This is title</title></header><body>Hello world{% if bodyclass %} {{ bodyclass }} {% endif %}</body></html>";
+    Data data = Data();
+    data.title = "Awesome Title";
+
+    string str = "<html><header><title>{{ title }}</title></header><body></body></html>";
     string res1 = parser.parse2(str);
-    writeln(res1);
+    //writeln(res1);
     assert(parser.elements.length == 0);
 }
 

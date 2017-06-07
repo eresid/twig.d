@@ -23,9 +23,9 @@ void main()
 
     Data data = Data();
     data.title = "Awesome Twig.d";
-    //write(tempMethod(data));
+    write(tempMethod(data));
 
-    testFormat(true);
+    //testFormat(true);
 }
 
 private void testImport() {
@@ -37,13 +37,16 @@ private void testImport() {
 }
 
 private string tempMethod(Data data) {
-    string str = "";
-    str ~= "<html><header><title>";
-    str ~= to!string(data.title);
-    str ~= "</title></header><body></body></html>";
+    import std.array : appender;
 
-    str ~= "\n";
-    return str;
+    auto str = appender!string();
+
+    str.put("<html><header><title>");
+    str.put(to!string(data.title));
+    str.put("</title></header><body></body></html>");
+
+    str.put("\n");
+    return str.data;
 }
 
 private void testFormat(bool isFormatter) {
