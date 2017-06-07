@@ -23,61 +23,23 @@ class Parser {
         this.generator = new Generator();
     }
 
-    string parse(string content) {
-        elements.length = 0;
-        ulong indexFrom = 0;
-
-        Element currentElement = null;
-
-        // find all elements on top level
-        do {
-            currentElement = toElement(content, indexFrom, content.length);
-            if (currentElement !is null) {
-                elements ~= currentElement;
-                indexFrom = currentElement.indexTo;
-            }
-        } while (currentElement !is null);
-
-        // change elements to output text
-        for (int i=0; i<elements.length; i++) {
-            Element tempElement = elements[i];
-
-            final switch(tempElement.type) {
-                case Delimiter.Type.COMMENT: {
-                    content = content[0 .. tempElement.indexFrom]
-                            ~ generator.toComment(tempElement.expression)
-                            ~ content[tempElement.indexTo .. content.length];
-                    break;
-                }
-                case Delimiter.Type.VARIABLE: {
-                    content = content[0 .. tempElement.indexFrom]
-                            ~ generator.toVariable(tempElement.expression)
-                            ~ content[tempElement.indexTo .. content.length];
-                    break;
-                }
-                case Delimiter.Type.BLOCK: {
-                    break;
-                }
-            }
-        }
-
-        return content;
-    }
-
-    string parse2(string content) {
+    string parse(string content, ulong indexFrom = 0) {
         string result = "";
 
-        elements.length = 0;
-        ulong indexFrom = 0;
+        if (indexFrom == 0) {
+            elements.length = 0; // clear array
+        }
 
         Element nextElement;
         do {
             nextElement = findNextElement(content, indexFrom);
 
             if (nextElement is null) {
-                result ~= toPrint(content[indexFrom .. content.length]);
+                result ~= generator.toString(content[indexFrom .. content.length]);
             } else {
-                result ~= toPrint(content[indexFrom .. nextElement.indexFrom]);
+                elements ~= nextElement;
+
+                result ~= generator.toString(content[indexFrom .. nextElement.indexFrom]);
 
                 if (nextElement.type == Delimiter.Type.COMMENT) {
                     result ~=  generator.toComment(nextElement.expression);
@@ -93,10 +55,6 @@ class Parser {
         } while (nextElement !is null);
 
         return result;
-    }
-
-    private string toPrint(const string content) {
-        return "str ~= \"" ~ content ~ "\"\n";
     }
 
     private Element findNextElement(const ref string content, ulong indexFrom) {
@@ -140,48 +98,6 @@ class Parser {
 
         return element;
     }
-
-    private Element toElement(ref string content, ulong indexFrom, ulong indexTo) {
-        Element element = null;
-
-        for(ulong i = indexFrom; i < indexTo; i++) {
-            if (i+2 >= indexTo) {
-                return null;
-            }
-
-            string word = content[i .. i+2];
-
-            if (canFind(Delimiter.OPEN_DELIMITERS, word)) {
-                element = new Element;
-
-                element.indexFrom = i;
-
-                if (word == Delimiter.COMMENT_START) {
-                    element.type = Delimiter.Type.COMMENT;
-                } else if (word == Delimiter.VARIABLE_START) {
-                    element.type = Delimiter.Type.VARIABLE;
-                } else if (word == Delimiter.BLOCK_START) {
-                    element.type = Delimiter.Type.BLOCK;
-                }
-
-                if (element.type == Delimiter.Type.BLOCK) {
-                    throw new NotImplementedException("Blocks {% %} are not supported");
-                }
-
-                for(ulong j = i; j < indexTo; j++) {
-                    if (canFind(Delimiter.CLOSE_DELIMITERS, content[j .. j+2])) {
-                        element.indexTo = j+2;
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-
-        element.expression = strip(content[element.indexFrom+2 .. element.indexTo-2]);
-
-        return element;
-    }
 }
 
 class Element {
@@ -197,32 +113,32 @@ class Element {
 unittest {
     Parser parser = new Parser;
 
-    //Data data = Data();
-    //data.title = "Awesome Title";
-
-    string str = "<html><header><title>{{ title }}</title></header><body></body></html>";
-    string res1 = parser.parse2(str);
-    //writeln(res1);
+    // Test zero elements
+    string example1 = "<html><header><title></title></header><body></body></html>";
+    string result1 = "str.put(\"<html><header><title></title></header><body></body></html>\"));\n";
+    assert(parser.parse(example1) == result1);
     assert(parser.elements.length == 0);
+
+    // Test one variable
+    string example2 = "<html><header><title>{{ title }}</title></header><body></body></html>";
+    string result2 = "str.put(\"<html><header><title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body></body></html>\"));\n";
+    assert(parser.parse(example2) == result2);
+    assert(parser.elements.length == 1);
+
+    // Test two variables
+    string example3 = "<html><header><title>{{ title }}</title></header><body>{{ bodyText }}</body></html>";
+    string result3 = "str.put(\"<html><header><title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title></header><body>\"));\nstr.put(to!string(data.bodyText));\nstr.put(\"</body></html>\"));\n";
+    assert(parser.parse(example3) == result3);
+    assert(parser.elements.length == 2);
 }
 
-/+
 unittest {
-    Parser parser = new Parser;
-
-    string str = "<html><header><title>This is title</title></header><body>Hello world</body></html>";
-    string result = parser.parse(str);
-    assert(parser.elements.length == 0);
-}
-
-unittest {
-    Data data = Data();
-    data.title = "Awesome Title";
-    Parser parser = new Parser(data);
+    Parser parser = new Parser();
 
     string str = "<title>{{ title }}</title>";
-    string result = parser.parse(str);
-    writeln("RESULT ", result);
+    string result = "str.put(\"<title>\"));\nstr.put(to!string(data.title));\nstr.put(\"</title>\"));\n";
+
+    assert(parser.parse(str) == result);
     assert(parser.elements.length == 1);
 
     Element element = parser.elements[0];
@@ -258,7 +174,7 @@ unittest {
 
     string str = "<title>{# some comment #}</title>";
     string result = parser.parse(str);
-    assert(result == "<title><!-- some comment --></title>");
+    assert(result == "str.put(\"<title>\"));\nstr.put(\"<!-- some comment -->\");\nstr.put(\"</title>\"));\n");
     assert(parser.elements.length == 1);
 
     Element element = parser.elements[0];
@@ -266,4 +182,4 @@ unittest {
     assert(element.expression == "some comment");
     assert(element.indexFrom == 7);
     assert(element.indexTo == 25);
-}+/
+}
