@@ -2,100 +2,48 @@ module twigd.vibe;
 
 version(HAVE_VIBE_D):
 
-pragma(msg, "Compiling Temple with Vibed support");
+import vibe.http.server;
+import vibe.textfilter.html;
+import vibe.utils.dictionarylist;
 
-private {
-	import temple;
-	import vibe.http.server;
-	import vibe.textfilter.html;
-	import vibe.utils.dictionarylist;
-	import std.stdio;
-	import std.variant;
+import twigd.data;
+import twigd.parser;
+
+import std.stdio;
+
+template compileHTMLDietFile(string filename, ALIASES...) {
+	alias compileHTMLDietFile = compileHTMLDietFileString!(filename, import(filename), ALIASES);
 }
 
-struct TempleHtmlFilter {
+template compileHTMLDietFileString(string filename, string contents, ALIASES...) {
+	import std.conv : to;
+	enum _diet_files = collectFiles!(filename, contents);
 
-	private static struct SafeString {
-		const string payload;
+    alias TRAITS = DietTraits!ALIASES;
+    pragma(msg, "Compiling Twig HTML template "~filename~"...");
+    private Document _diet_nodes() { return applyTraits!TRAITS(parseDiet!(translate!TRAITS)(_diet_files)); }
+    enum _dietParser = getHTMLMixin(_diet_nodes(), dietOutputRangeName, getHTMLOutputStyle!TRAITS);
+
+	// uses the correct range name and removes 'dst' from the scope
+	private void exec(R)(ref R _diet_output) {
+		mixin(localAliasesMixin!(0, ALIASES));
+		//pragma(msg, getHTMLMixin(nodes));
+		mixin(_dietParser);
 	}
 
-	static void temple_filter(ref TempleOutputStream stream, string unsafe) {
-		filterHTMLEscape(stream, unsafe);
-	}
-
-	static void temple_filter(ref TempleOutputStream stream, Variant variant) {
-		temple_filter(stream, variant.toString);
-	}
-
-	static string temple_filter(SafeString safe) {
-		return safe.payload;
-	}
-
-	static SafeString safe(string str) {
-		return SafeString(str);
-	}
-
-	static SafeString safe(Variant variant) {
-		return SafeString(variant.toString);
+	void compileHTMLDietFileString(R)(ref R dst) {
+		exec(dst);
 	}
 }
 
-private enum SetupContext = q{
-	static if(is(Ctx == HTTPServerRequest)) {
-		TempleContext context = new TempleContext();
-		copyContextParams(context, req);
-	}
-	else {
-		TempleContext context = req;
-	}
-};
+void renderTwigStr(string templateStr, Data data) (HTTPServerResponse res) {
+    auto dst = StreamOutputRange(res.bodyWriter);
 
-private template isSupportedCtx(Ctx) {
-	enum isSupportedCtx = is(Ctx : HTTPServerRequest) || is(Ctx == TempleContext);
+	auto t = compile_temple!(templateStr, TempleHtmlFilter);
+	t.render(res.bodyWriter, data);
 }
 
-void renderTemple(string temple, Ctx = TempleContext)
-	(HTTPServerResponse res, Ctx req = null)
-	if(isSupportedCtx!Ctx)
-{
-	mixin(SetupContext);
-
-	auto t = compile_temple!(temple, TempleHtmlFilter);
+void renderTwig(string templateFile, Data data) (HTTPServerResponse res) {
+	auto t = compile_temple_file!(templateFile, TempleHtmlFilter);
 	t.render(res.bodyWriter, context);
-}
-
-void renderTempleFile(string file, Ctx = TempleContext)
-	(HTTPServerResponse res, Ctx req = null)
-	if(isSupportedCtx!Ctx)
-{
-	mixin(SetupContext);
-
-	auto t = compile_temple_file!(file, TempleHtmlFilter);
-	t.render(res.bodyWriter, context);
-}
-
-void renderTempleLayoutFile(string layout_file, string partial_file, Ctx = TempleContext)
-	(HTTPServerResponse res, Ctx req = null)
-	if(isSupportedCtx!Ctx)
-{
-	mixin(SetupContext);
-
-	auto layout = compile_temple_file!(layout_file, TempleHtmlFilter);
-	auto partial = compile_temple_file!(partial_file, TempleHtmlFilter);
-	auto composed = layout.layout(&partial);
-	composed.render(res.bodyWriter, context);
-}
-
-private void copyContextParams(ref TempleContext ctx, ref HTTPServerRequest req) {
-	static if(is(typeof(req.params) == string[string])) {
-		if(!req || !(req.params))
-			return;
-	} else if(is(typeof(req.params) == DictionaryList!(string, true, 32))) {
-		if(!req || req.params.length < 1)
-			return;
-	}
-
-	foreach(key, val; req.params) {
-		ctx[key] = val;
-	}
 }

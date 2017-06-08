@@ -5,9 +5,9 @@ import std.functional : toDelegate;
 import vibe.vibe;
 import twigd;
 
-void main() {
+shared static this() {
 	auto router = new URLRouter;
-	router.get("/", staticTemplate!"index.html");
+	router.get("/", &showHome);
 	router.get("*", serveStaticFiles("public"));
 
 	auto settings = new HTTPServerSettings;
@@ -18,7 +18,6 @@ void main() {
 	listenHTTP(settings, router);
 
 	logInfo("Please open http://127.0.0.1:8080/ in your browser.");
-	runApplication();
 }
 
 void showHome(HTTPServerRequest req, HTTPServerResponse res) {

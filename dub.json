@@ -3,7 +3,15 @@
 	"authors": [
 		"Eugene Sakara"
 	],
-	"description": "The flexible, fast, and secure template engine for Vibe.d",
+	"description": "The flexible and fast template engine for Vibe.d",
 	"copyright": "Copyright © 2017, Eugene Sakara",
-	"license": "MIT"
+	"license": "MIT",
+	"dependencies": {
+		"vibe-d": {
+			"version": "~>0.8.0-beta.6",
+			"optional": true
+		}
+	},
+	"targetType": "library",
+	"ignoredFiles": ["source/app.d"]
 }
