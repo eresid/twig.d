@@ -8,35 +8,30 @@ version(unittest) {
     import std.stdio;
 }
 
-import twigd.data;
+struct Generator {
 
-class Generator {
-
-    private Data data;
-
-    private alias allMembers(T...) = Identity!(__traits(allMembers, T));
-    private alias getMember(T...) = Identity!(__traits(getMember, T));
-
-    this(Data data) {
-        this.data = data;
+    string toString(string value) {
+         return "str.put(\"" ~ value ~ "\");\n";
     }
 
     string toComment(string comment) {
-        return "<!-- " ~ comment ~ " -->";
+        return "str.put(\"<!-- " ~ comment ~ " -->\");\n";
     }
 
     string toVariable(string variable) {
-        foreach(n; allMembers!data) {
-            if (n == variable) {
-                return getMember!(data, variable);
-            }
-        }
-
-        return "";
+        return "str.put(to!string(data." ~ variable ~ "));\n";
     }
 }
 
 unittest {
+    auto generator = new Generator();
 
+    string commentResult = "str.put(\"<!-- some comment -->\");\n";
+    assert(generator.toComment("some comment") == commentResult);
 
+    assert(generator.toVariable("title") == "str.put(to!string(data.title));\n");
+
+    string templateStr = "<!DOCTYPE html><html><body><h1>Hello twig.d!</h1></body></html>";
+    string templateResult = "str.put(\"<!DOCTYPE html><html><body><h1>Hello twig.d!</h1></body></html>\");\n";
+    assert(generator.toString(templateStr) == templateResult);
 }

@@ -1,13 +1,12 @@
 [0.0.1]
++ compile template
 + parser
 + comments support
-- variables support
-
-[0.0.2]
++ variables support
 - vibe.d integration
 - vibe.d static example
 
-[0.0.3]
+[0.0.2]
 - extends
 - block
 
@@ -21,7 +20,7 @@
 - include
 
 [0.0.7]
-- cache
+- cache (no, check, once)
 
 [0.0.8]
 - set

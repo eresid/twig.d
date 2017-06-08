@@ -1,0 +1,1 @@
+string msg = "compile time message!";
