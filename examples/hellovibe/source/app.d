@@ -3,9 +3,9 @@ module app;
 import std.functional : toDelegate;
 
 import vibe.vibe;
+import twigd;
 
-void main()
-{
+void main() {
 	auto router = new URLRouter;
 	router.get("/", staticTemplate!"index.html");
 	router.get("*", serveStaticFiles("public"));
@@ -21,16 +21,22 @@ void main()
 	runApplication();
 }
 
-void doRequest(HTTPServerRequest req, HTTPServerResponse res) {
+void showHome(HTTPServerRequest req, HTTPServerResponse res) {
+    Data data = Data();
+    data.title = "The Venus Project";
+    data.username = "Eugene";
 
-	// Client requested with query string `?name=foo`
-	req.renderTemple!(`
-		Hello, world!
-		And hello, <%= var.name %>!
-	`)(res);
+	//res.renderTwig!("index.html", req, data);
 }
 
-void showError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error)
-{
-	res.renderTemplate!("error.html", req, error);
+void testGet(HTTPServerRequest req, HTTPServerResponse res) {
+	// Client requested with query string `?name=foo`
+	/+req.renderTemple!(`
+		Hello, world!
+		And hello, {{ name }}!
+	`)(res);+/
+}
+
+void showError(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
+	//res.renderTwig!("error.html", req, error);
 }

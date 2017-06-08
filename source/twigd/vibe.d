@@ -1,6 +1,6 @@
 module twigd.vibe;
 
-version(Have_vibe_d):
+version(HAVE_VIBE_D):
 
 pragma(msg, "Compiling Temple with Vibed support");
 

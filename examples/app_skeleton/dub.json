@@ -10,7 +10,7 @@
 		"Eugene Sakara"
 	],
 	"dependencies": {
-		"vibe-d": "~>0.8.0-beta.4"
+		"vibe-d": "~>0.8.0-beta.6"
 	},
 	"license": "MIT"
 }
