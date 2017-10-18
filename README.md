@@ -6,6 +6,6 @@ The flexible, fast, and secure template engine for Vibe.d based on [twig](http:/
 - [mustache-d](https://github.com/repeatedly/mustache-d)
 - [embd](https://github.com/carlor/embd)
 - [vayne](https://github.com/eBookingServices/vayne)
-- [dien-ng](https://github.com/rejectedsoftware/diet-ng)
+- [diet-ng](https://github.com/rejectedsoftware/diet-ng)
 - [jax](https://github.com/eBookingServices/jax)
 - [hunt](https://github.com/huntlabs/hunt/tree/master/source/hunt/view)
